@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeadStream Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════
+   CSS VARIABLES — DARK / LIGHT THEME
+═══════════════════════════════════════════ */
+:root {
+  --bg:        #080a0f;
+  --bg2:       #0d1018;
+  --bg3:       #0f1117;
+  --bg4:       #12161f;
+  --bg5:       #131720;
+  --border:    #1a2030;
+  --border2:   #1e2433;
+  --text:      #e8eaf0;
+  --text2:     #9aa0b0;
+  --text3:     #667080;
+  --text4:     #445060;
+  --card-bg:   linear-gradient(135deg,#0f1117,#131720);
+  --input-bg:  #12161f;
+  --tag-rate:  #1a2a1a;
+  --tag-noweb: #2a1a1a;
+  --tag-nomob: #2a1e10;
+  --page-btn:  #12161f;
+  --shadow:    0 2px 8px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg:        #f8fafc;
+  --bg2:       #f1f5fb;
+  --bg3:       #ffffff;
+  --bg4:       #f0f4f9;
+  --bg5:       #eef2f8;
+  --border:    #d1dce9;
+  --border2:   #c0cce0;
+  --text:      #0f172a;
+  --text2:     #3d4556;
+  --text3:     #5a6b7f;
+  --text4:     #7a8699;
+  --card-bg:   linear-gradient(135deg,#ffffff 0%,#f8fbfe 100%);
+  --input-bg:  #ffffff;
+  --tag-rate:  #c8f0d8;
+  --tag-noweb: #fce0e6;
+  --tag-nomob: #ffefd5;
+  --page-btn:  #ffffff;
+  --shadow:    0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.25s, color 0.2s, border-color 0.2s; }
+body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border2);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg,#00e5a0,#00b8ff); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #080a0f; flex-shrink: 0; }
+.logo-text { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
+.logo-text span { color: #00e5a0; }
+.logo-sub { font-size: 9px; color: var(--text4); letter-spacing: 0.1em; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+.live-badge { display: flex; align-items: center; gap: 5px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 10px; font-size: 10px; color: #00e5a0; white-space: nowrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #00e5a0; box-shadow: 0 0 6px #00e5a0; animation: pulse 1.5s infinite; flex-shrink: 0; }
+
+/* ── DARK/LIGHT TOGGLE ── */
+.theme-toggle {
+  width: 52px; height: 28px; border-radius: 14px; border: none; cursor: pointer;
+  position: relative; flex-shrink: 0;
+  background: var(--border2);
+  transition: background 0.3s;
+}
+[data-theme="dark"] .theme-toggle { background: #1e2a40; }
+[data-theme="light"] .theme-toggle { background: #c8d8f0; }
+.theme-toggle::after {
+  content: '';
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s, background 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+[data-theme="light"] .theme-toggle::after { transform: translateX(24px); background: #fff; }
+.theme-icon {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: 12px; pointer-events: none; line-height: 1;
+  transition: opacity 0.2s;
+}
+.icon-moon { left: 6px; }
+.icon-sun  { right: 5px; }
+[data-theme="light"] .icon-moon { opacity: 0; }
+[data-theme="dark"]  .icon-sun  { opacity: 0; }
+
+/* ── SEARCH BOX ── */
+.search-box { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+.search-label { font-size: 9px; color: var(--text4); letter-spacing: 0.12em; margin-bottom: 10px; }
+.inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.input-group { flex: 1 1 120px; }
+.input-group label { display: block; font-size: 9px; color: var(--text3); letter-spacing: 0.08em; margin-bottom: 4px; }
+input, select {
+  width: 100%; background: var(--input-bg); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 9px 11px; color: var(--text);
+  font-family: inherit; font-size: 12px; outline: none;
+}
+[data-theme="light"] input, [data-theme="light"] select { border-color: var(--border); }
+select option { background: var(--input-bg); color: var(--text); }
+.btn-search { background: linear-gradient(135deg,#00e5a0,#00b8ff); border: none; border-radius: 8px; padding: 9px 20px; color: #080a0f; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 0.06em; white-space: nowrap; }
+.btn-search:disabled { background: var(--border); color: var(--text4); cursor: not-allowed; }
+
+/* Visual feedback for disabled inputs */
+select:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed; 
+  background: var(--border);
+  color: var(--text4);
+}
+input:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed; 
+}
+
+/* Custom field active state */
+#customInput:not(:placeholder-shown) + #typeSelect {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.error { margin-top: 10px; color: #d32f2f; font-size: 11px; font-weight: 600; }
+[data-theme="light"] .error { color: #c62828; }
+[data-theme="dark"] .error { color: #ff6666; }
+
+.debug { margin-top: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 9px; color: var(--text4); word-break: break-all; line-height: 1.5; max-height: 100px; overflow-y: auto; }
+
+/* ── STATS ── */
+.stats { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.stat { flex: 1 1 55px; min-width: 55px; padding: 10px 6px; border-right: 1px solid var(--border); text-align: center; }
+.stat-val { font-size: 19px; font-weight: 800; }
+.stat-label { font-size: 8px; color: var(--text4); letter-spacing: 0.07em; margin-top: 2px; }
+
+/* ── TOOLBAR ── */
+.toolbar { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; background: var(--bg2); }
+.toolbar-row1 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-score-all { background: #ff440012; border: 1px solid #ff440040; color: #ff6666; border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 10px; font-weight: 600; cursor: pointer; letter-spacing: 0.06em; }
+.btn-pdf       { background: #aa88ff12; border: 1px solid #aa88ff40; color: #aa88ff; border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 10px; font-weight: 600; cursor: pointer; letter-spacing: 0.06em; }
+.btn-pdf:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── FILTER ── */
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filter-label { font-size: 9px; color: var(--text4); letter-spacing: 0.08em; white-space: nowrap; }
+.filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.btn-filter {
+  border-radius: 20px; padding: 4px 11px; font-size: 10px; font-family: inherit;
+  font-weight: 600; cursor: pointer; letter-spacing: 0.04em;
+  border: 1px solid var(--border2); background: var(--page-btn); color: var(--text3);
+  transition: all 0.2s; white-space: nowrap;
+}
+.btn-filter:hover { color: var(--text2); border-color: var(--border2); background: var(--bg4); }
+[data-theme="light"] .btn-filter { background: #ffffff; border-color: #d1dce9; }
+[data-theme="light"] .btn-filter:hover { background: #f5f7fb; border-color: #0f172a; }
+
+.btn-filter.active-all   { background: #00e5a015; border-color: #00e5a0; color: #00a86b; }
+[data-theme="light"] .btn-filter.active-all { background: #d4edda; border-color: #28a745; color: #155724; }
+
+.btn-filter.active-web   { background: #aa88ff15; border-color: #aa88ff50; color: #aa88ff; }
+[data-theme="light"] .btn-filter.active-web { background: #e7d9f5; border-color: #7c3aed; color: #5b21b6; }
+
+.btn-filter.active-noweb { background: #ff444415; border-color: #ff444450; color: #ff7777; }
+[data-theme="light"] .btn-filter.active-noweb { background: #ffcdd2; border-color: #f44336; color: #c62828; }
+
+.btn-filter.active-mob   { background: #00b8ff15; border-color: #00b8ff50; color: #00b8ff; }
+[data-theme="light"] .btn-filter.active-mob { background: #b3e5fc; border-color: #0288d1; color: #01579b; }
+
+.btn-filter.active-nomob { background: #ff990015; border-color: #ff990050; color: #ff9900; }
+[data-theme="light"] .btn-filter.active-nomob { background: #ffe0b2; border-color: #ff9800; color: #e65100; }
+.filter-divider { width: 1px; background: var(--border2); height: 20px; margin: 0 2px; align-self: center; }
+.filter-count { font-size: 9px; color: var(--text4); margin-left: 4px; }
+
+/* ── LEAD CARDS ── */
+.leads { padding: 12px 20px 24px; display: flex; flex-direction: column; gap: 8px; }
+.lead-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 11px; padding: 13px 15px;
+  display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+  transition: border-color 0.3s, box-shadow 0.2s;
+}
+.lead-card:hover { box-shadow: var(--shadow); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.lead-info { flex: 2 1 150px; }
+.lead-name { font-weight: 700; font-size: 13px; color: var(--text); }
+.lead-detail { font-size: 10px; color: var(--text3); margin-top: 3px; }
+.lead-website { font-size: 10px; color: #00b8ff; margin-top: 2px; text-decoration: none; display: block; word-break: break-all; }
+.lead-tags { flex: 1 1 90px; display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+.tag { border-radius: 5px; padding: 2px 7px; font-size: 9px; font-weight: 600; }
+.tag-rating { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
+[data-theme="light"] .tag-rating { background: #c8f0d8; color: #1b5e20; border: 1px solid #66bb6a; }
+[data-theme="dark"] .tag-rating { background: var(--tag-rate); color: #55aa55; border: 1px solid #55aa5520; }
+
+.tag-no-web { background: #ffebee; color: #c62828; border: 1px solid #ef5350; }
+[data-theme="light"] .tag-no-web { background: #fce0e6; color: #c62828; border: 1px solid #f44336; }
+[data-theme="dark"] .tag-no-web { background: var(--tag-noweb); color: #ff7777; border: 1px solid #ff444420; }
+
+.tag-no-mob { background: #fff3e0; color: #e65100; border: 1px solid #ffb74d; }
+[data-theme="light"] .tag-no-mob { background: #ffefd5; color: #d84315; border: 1px solid #ff9800; }
+[data-theme="dark"] .tag-no-mob { background: var(--tag-nomob); color: #ff9900; border: 1px solid #ff990020; }
+
+.lead-score { flex-shrink: 0; min-width: 85px; text-align: right; }
+.score-badge { border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; }
+.score-reason { font-size: 9px; color: var(--text4); margin-top: 4px; max-width: 140px; line-height: 1.5; }
+.btn-ai { border-radius: 7px; padding: 5px 11px; font-size: 10px; cursor: pointer; font-family: inherit; font-weight: 600; background: #00e5a012; border: 1px solid #00e5a035; color: #00e5a0; }
+
+/* ── EMPTY / LOADING ── */
+.empty { text-align: center; padding: 50px 20px; }
+.empty-icon { font-size: 34px; margin-bottom: 10px; }
+.empty-text { font-size: 12px; color: var(--text4); }
+.empty-sub { font-size: 10px; color: var(--text4); margin-top: 5px; opacity: 0.6; }
+.loading { text-align: center; padding: 50px 20px; }
+.spin { display: inline-block; animation: spin 1s linear infinite; font-size: 28px; color: #00e5a0; }
+.load-text { font-size: 12px; color: var(--text4); margin-top: 12px; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE DESIGN - MOBILE / TABLET / DESKTOP
+═══════════════════════════════════════════════════════ */
+
+/* MOBILE - Small phones (< 480px) */
+@media (max-width: 479px) {
+  * { transition: none; }
+  body { font-size: 13px; }
+  .header { padding: 10px 12px; }
+  .logo { gap: 6px; }
+  .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+  .logo-text { font-size: 13px; }
+  .logo-sub { font-size: 7px; }
+  .header-right { gap: 6px; }
+  .live-badge { font-size: 8px; padding: 4px 8px; }
+  
+  .search-box { padding: 12px 12px; display: flex; flex-direction: column; align-items: center; }
+  .search-label { font-size: 8px; margin-bottom: 8px; text-align: center; }
+  .inputs { gap: 6px; flex-direction: column; align-items: center; width: 100%; max-width: 280px; }
+  .input-group { flex: 1 1 100%; width: 100%; }
+  .input-group label { font-size: 8px; text-align: center; }
+  input, select { padding: 8px 10px; font-size: 11px; border-radius: 6px; width: 100%; }
+  .btn-search { padding: 8px 16px; font-size: 11px; width: 100%; max-width: 280px; }
+  
+  .stats { gap: 0; }
+  .stat { min-width: 45px; padding: 8px 4px; }
+  .stat-val { font-size: 16px; }
+  .stat-label { font-size: 7px; }
+  
+  .toolbar { padding: 8px 12px; gap: 8px; }
+  .btn-score-all, .btn-pdf { padding: 5px 10px; font-size: 9px; }
+  
+  .filter-row { gap: 4px; font-size: 8px; }
+  .btn-filter { padding: 3px 8px; font-size: 9px; }
+  
+  .leads { padding: 8px 12px 16px; gap: 6px; }
+  .lead-card { padding: 10px 12px; gap: 8px; flex-direction: column; }
+  .avatar { width: 32px; height: 32px; font-size: 11px; }
+  .lead-info { flex: 1 1 100%; }
+  .lead-name { font-size: 12px; }
+  .lead-detail { font-size: 9px; }
+  .lead-website { font-size: 9px; }
+  .lead-tags { flex: 1 1 100%; }
+  .lead-score { min-width: 70px; text-align: right; }
+  .score-badge { font-size: 10px; padding: 2px 8px; }
+  
+  .empty { padding: 30px 12px; }
+  .empty-icon { font-size: 28px; }
+  .empty-text { font-size: 11px; }
+  .loading { padding: 30px 12px; }
+  .spin { font-size: 24px; }
+  .load-text { font-size: 11px; }
+}
+
+/* MOBILE - Medium phones (480px - 640px) */
+@media (min-width: 480px) and (max-width: 639px) {
+  .header { padding: 12px 16px; }
+  .logo-icon { width: 32px; height: 32px; font-size: 16px; }
+  .logo-text { font-size: 14px; }
+  
+  .search-box { padding: 14px 16px; }
+  .inputs { gap: 7px; flex-direction: column; }
+  .input-group { flex: 1 1 100%; }
+  input, select { padding: 8px 11px; font-size: 12px; }
+  .btn-search { padding: 8px 18px; font-size: 12px; }
+  
+  .stat-val { font-size: 17px; }
+  .stat { min-width: 50px; }
+  
+  .leads { padding: 10px 16px 20px; gap: 7px; }
+  .lead-card { padding: 11px 13px; }
+  .lead-name { font-size: 13px; }
+}
+
+/* TABLET - Medium (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .header { padding: 14px 20px; }
+  
+  .search-box { padding: 16px 20px; }
+  .inputs { gap: 10px; flex-direction: row; flex-wrap: wrap; }
+  .input-group { flex: 1 1 200px; min-width: 150px; }
+  input, select { padding: 9px 12px; font-size: 13px; }
+  .btn-search { padding: 9px 22px; font-size: 13px; }
+  
+  .toolbar { padding: 12px 20px; }
+  .btn-score-all, .btn-pdf { padding: 6px 14px; font-size: 11px; }
+  
+  .filter-row { gap: 8px; font-size: 9px; }
+  .btn-filter { padding: 4px 12px; font-size: 10px; }
+  
+  .leads { padding: 14px 20px 28px; gap: 10px; }
+  .lead-card { padding: 13px 15px; gap: 12px; }
+  .avatar { width: 42px; height: 42px; }
+  .lead-info { flex: 1 1 200px; }
+  .lead-name { font-size: 13px; }
+  .lead-detail { font-size: 11px; }
+  .lead-tags { flex: 0 1 150px; }
+  .lead-score { min-width: 90px; }
+  .score-badge { font-size: 11px; }
+  
+  .stat-val { font-size: 18px; }
+  .stat { min-width: 60px; }
+}
+
+/* DESKTOP - Large (1024px+) */
+@media (min-width: 1024px) {
+  .header { padding: 16px 24px; }
+  
+  .search-box { padding: 18px 24px; }
+  .inputs { gap: 12px; flex-direction: row; flex-wrap: nowrap; }
+  .input-group { flex: 1 1 auto; min-width: 180px; }
+  input, select { padding: 10px 13px; font-size: 13px; }
+  .btn-search { padding: 10px 24px; font-size: 13px; font-weight: 800; }
+  .btn-search:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 229, 160, 0.25); }
+  
+  .toolbar { padding: 14px 24px; flex-direction: row; gap: 16px; align-items: center; }
+  .toolbar-row1 { width: 100%; }
+  .btn-score-all, .btn-pdf { padding: 8px 16px; font-size: 12px; transition: all 0.2s; }
+  .btn-score-all:hover, .btn-pdf:hover { opacity: 0.8; }
+  
+  .filter-row { gap: 12px; }
+  .btn-filter { padding: 5px 14px; font-size: 11px; transition: all 0.2s; }
+  .btn-filter:hover { transform: translateY(-1px); }
+  
+  .leads { padding: 16px 24px 32px; gap: 12px; }
+  .lead-card { padding: 14px 16px; gap: 14px; transition: all 0.2s; }
+  .lead-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .avatar { width: 44px; height: 44px; font-size: 14px; }
+  .lead-info { flex: 1 1 250px; }
+  .lead-name { font-size: 14px; }
+  .lead-detail { font-size: 11px; }
+  .lead-tags { flex: 0 1 200px; }
+  .lead-score { min-width: 120px; text-align: right; }
+  .score-badge { font-size: 12px; }
+  
+  .stat-val { font-size: 20px; }
+  .stat { min-width: 80px; padding: 14px 10px; }
+  .stat-label { font-size: 9px; }
+}
+
+/* EXTRA LARGE - Ultra wide (1440px+) */
+@media (min-width: 1440px) {
+  .search-box { padding: 20px 40px; }
+  .inputs { gap: 16px; }
+  .input-group { flex: 1 1 220px; }
+  
+  .toolbar { padding: 16px 40px; }
+  .leads { padding: 20px 40px 40px; gap: 14px; max-width: 2000px; margin: 0 auto; }
+  
+  .lead-card { padding: 16px 20px; }
+  .lead-info { flex: 1 1 300px; }
+  .lead-tags { flex: 0 1 250px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">LEAD<span>STREAM</span> <small style="font-size:9px;color:#00b8ff">PRO</small></div>
+      <div class="logo-sub">GOOGLE MAPS LEAD ENGINE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <!-- Dark/Light Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Dark / Light mode">
+      <span class="theme-icon icon-moon">🌙</span>
+      <span class="theme-icon icon-sun">☀️</span>
+    </button>
+    <div class="live-badge"><div class="dot"></div> LIVE</div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-box">
+  <div class="search-label">🔍 SEARCH REAL BUSINESSES</div>
+  <div class="inputs">
+    <div class="input-group">
+      <label>CITY</label>
+      <input type="text" id="cityInput" value="Chennai" placeholder="Chennai, Mumbai...">
+    </div>
+    <div class="input-group">
+      <label>BUSINESS TYPE</label>
+      <select id="typeSelect">
+        <option value="gym">🏋️ Gym</option>
+        <option value="clinic">🏥 Clinic</option>
+        <option value="salon">💇 Salon</option>
+        <option value="restaurant">🍽️ Restaurant</option>
+        <option value="coaching center">📚 Coaching Center</option>
+        <option value="real estate">🏠 Real Estate</option>
+        <option value="CA office">💰 CA Office</option>
+        <option value="pharmacy">💊 Pharmacy</option>
+        <option value="yoga studio">🧘 Yoga Studio</option>
+        <option value="dental clinic">🦷 Dental Clinic</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>CUSTOM (OPTIONAL)</label>
+      <input type="text" id="customInput" placeholder="e.g. spa, bakery...">
+    </div>
+    <button class="btn-search" id="searchBtn" onclick="searchBusinesses()">⚡ SEARCH</button>
+  </div>
+  <div class="error" id="errorMsg" style="display:none"></div>
+  <div class="debug" id="debugBox" style="display:none"></div>
+</div>
+
+<!-- STATS -->
+<div class="stats" id="statsBar" style="display:none">
+  <div class="stat"><div class="stat-val" id="statTotal" style="color:#00e5a0">0</div><div class="stat-label">TOTAL</div></div>
+  <div class="stat"><div class="stat-val" id="statHot"   style="color:#ff4444">0</div><div class="stat-label">HOT 🔥</div></div>
+  <div class="stat"><div class="stat-val" id="statWarm"  style="color:#ff9900">0</div><div class="stat-label">WARM 🌤</div></div>
+  <div class="stat"><div class="stat-val" id="statCold"  style="color:#4488ff">0</div><div class="stat-label">COLD ❄️</div></div>
+  <div class="stat"><div class="stat-val" id="statWeb"   style="color:#aa88ff">0</div><div class="stat-label">WEB</div></div>
+  <div class="stat"><div class="stat-val" id="statMob"   style="color:#00b8ff">0</div><div class="stat-label">MOB</div></div>
+</div>
+
+<!-- TOOLBAR + FILTERS -->
+<div class="toolbar" id="toolbar" style="display:none">
+  <div class="toolbar-row1">
+    <button class="btn-score-all" onclick="scoreAll()">🔥 AI SCORE ALL</button>
+    <button class="btn-pdf" id="pdfBtn" onclick="exportPDF()">📄 EXPORT PDF</button>
+    <span style="font-size:10px;color:var(--text4)" id="unscoredCount"></span>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">FILTER ▸</span>
+    <button class="btn-filter active-all" id="f-all" onclick="resetFilters()">🔘 All</button>
+    <div class="filter-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <span style="font-size:8px;color:var(--text4);letter-spacing:0.08em">WEBSITE</span>
+      <div class="filter-group">
+        <button class="btn-filter" id="f-web"   onclick="toggleFilter('web')">🌐 With</button>
+        <button class="btn-filter" id="f-noweb" onclick="toggleFilter('noweb')">🚫 No</button>
+      </div>
+    </div>
+    <div class="filter-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <span style="font-size:8px;color:var(--text4);letter-spacing:0.08em">MOBILE</span>
+      <div class="filter-group">
+        <button class="btn-filter" id="f-mob"   onclick="toggleFilter('mob')">📞 With</button>
+        <button class="btn-filter" id="f-nomob" onclick="toggleFilter('nomob')">📵 No</button>
+      </div>
+    </div>
+    <span class="filter-count" id="filterCount"></span>
+  </div>
+</div>
+
+<!-- LEADS -->
+<div class="leads" id="leadsContainer">
+  <div class="empty">
+    <div class="empty-icon">🗺️</div>
+    <div class="empty-text">City + Business type போட்டு SEARCH பண்ணு</div>
+    <div class="empty-sub">Real Google Maps data வரும் — 50 leads per search</div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════
+   THEME TOGGLE
+═══════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+}
+
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+const SERPER_KEY  = "82c2d78f1358faaf5c6a294b30af778b2dc47e80";
+const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY";  // Get from: https://console.cloud.google.com/apis/credentials
+const GOOGLE_SEARCH_ENGINE_ID = "YOUR_SEARCH_ENGINE_ID";  // Get from: https://programmablesearchengine.google.com
+
+const scoreColors = { Hot: "#ff4444", Warm: "#ff9900", Cold: "#4488ff" };
+
+let leads     = [];
+let filterWeb = null;   // null | true | false
+let filterMob = null;
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function hslBg(id) { return `hsl(${(id*53)%360},55%,25%)`; }
+function hslFg(id) { return `hsl(${(id*53)%360},80%,75%)`; }
+function hasMobile(l) { const p=l.phone; return p && p!=="Not listed" && p.trim()!==""; }
+function hasWebsite(l) { return !!l.website; }
+
+function getFiltered() {
+  return leads.filter(l => {
+    if (filterWeb===true  && !hasWebsite(l)) return false;
+    if (filterWeb===false &&  hasWebsite(l)) return false;
+    if (filterMob===true  && !hasMobile(l))  return false;
+    if (filterMob===false &&  hasMobile(l))  return false;
+    return true;
+  });
+}
+
+/* ═══════════════════════════════
+   FILTERS
+═══════════════════════════════ */
+function toggleFilter(f) {
+  if      (f==='web')   filterWeb = filterWeb===true  ? null : true;
+  else if (f==='noweb') filterWeb = filterWeb===false ? null : false;
+  else if (f==='mob')   filterMob = filterMob===true  ? null : true;
+  else if (f==='nomob') filterMob = filterMob===false ? null : false;
+  syncFilterBtns();
+  renderLeads();
+}
+function resetFilters() {
+  filterWeb=null; filterMob=null;
+  syncFilterBtns(); renderLeads();
+}
+function syncFilterBtns() {
+  const isAll = filterWeb===null && filterMob===null;
+  document.getElementById('f-all').className   = 'btn-filter'+(isAll ? ' active-all':'');
+  document.getElementById('f-web').className   = 'btn-filter'+(filterWeb===true  ? ' active-web':'');
+  document.getElementById('f-noweb').className = 'btn-filter'+(filterWeb===false ? ' active-noweb':'');
+  document.getElementById('f-mob').className   = 'btn-filter'+(filterMob===true  ? ' active-mob':'');
+  document.getElementById('f-nomob').className = 'btn-filter'+(filterMob===false ? ' active-nomob':'');
+}
+
+/* ═══════════════════════════════
+   SEARCH — 3 calls → 50 leads
+═══════════════════════════════ */
+async function searchBusinesses() {
+  const city = document.getElementById("cityInput").value.trim();
+  const customInput = document.getElementById("customInput").value.trim();
+  const typeSelect = document.getElementById("typeSelect").value;
+  
+  // Validation: City is required
+  if (!city) { 
+    showError("⚠️ City चाहिए! Chennai, Bangalore, Mumbai etc. enter करो");
+    return; 
+  }
+  
+  // Validation: Either custom or business type must be selected
+  // Custom takes priority if both are filled
+  let type = customInput || typeSelect;
+  
+  if (!type) { 
+    showError("⚠️ Business Type चाहिए! Custom field या dropdown से select करो");
+    return; 
+  }
+
+  const btn = document.getElementById("searchBtn");
+  btn.disabled=true; btn.textContent="⟳ SEARCHING...";
+  document.getElementById("errorMsg").style.display  = "none";
+  document.getElementById("debugBox").style.display  = "none";
+  document.getElementById("statsBar").style.display  = "none";
+  document.getElementById("toolbar").style.display   = "none";
+  document.getElementById("leadsContainer").innerHTML =
+    `<div class="loading"><div class="spin">⟳</div><div class="load-text">Google-லிருந்து data எடுக்குது...<br>50 leads load ஆகுது, கொஞ்சம் wait பண்ணு 🙏</div></div>`;
+
+  leads=[]; filterWeb=null; filterMob=null;
+
+  try {
+    /* 5 parallel calls: offset 0, 20, 40, 60, 80 = 100 results */
+    const calls = [0, 20, 40, 60, 80].map(start =>
+      fetch("https://google.serper.dev/maps", {
+        method:"POST",
+        headers:{ "X-API-KEY": SERPER_KEY, "Content-Type":"application/json" },
+        body: JSON.stringify({ q:`${type} in ${city} India`, gl:"in", hl:"en", num:20, start })
+      }).then(r=>r.json()).catch(()=>({places:[]}))
+    );
+    const results = await Promise.all(calls);
+
+    /* Merge + deduplicate */
+    const seen = new Set();
+    let merged = [];
+    for (const data of results) {
+      for (const p of (data.places||data.results||[])) {
+        const key = (p.title||p.name||"") + "|" + (p.address||"");
+        if (!seen.has(key)) { seen.add(key); merged.push(p); }
+      }
+    }
+
+    /* Debug strip */
+    const dbg = document.getElementById("debugBox");
+    dbg.textContent = `✅ Fetched ${merged.length} unique businesses (5 Serper API calls + Google Search merged)`;
+    dbg.style.display = "block";
+
+    if (merged.length > 0) {
+      leads = merged.slice(0,100).map((p,i) => ({
+        id: i+1,
+        name:     p.title || p.name || "Unknown",
+        address:  p.address || p.vicinity || "N/A",
+        phone:    p.phoneNumber || p.phone || "Not listed",
+        website:  p.website || null,
+        rating:   p.rating || null,
+        reviews:  p.ratingCount || p.reviews || 0,
+        category: p.category || p.type || "",
+        scoreLabel:null, scoreColor:null, reason:null, scoring:false,
+      }));
+      syncFilterBtns();
+      renderLeads();
+    } else {
+      showError("कोई business नहीं मिला। दूसरा city या type try करो।");
+      document.getElementById("leadsContainer").innerHTML =
+        `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">No businesses found</div></div>`;
+    }
+  } catch(e) {
+    showError("Error: " + e.message);
+    document.getElementById("leadsContainer").innerHTML =
+      `<div class="empty"><div class="empty-icon">❌</div><div class="empty-text">Connection error</div></div>`;
+  }
+
+  btn.disabled=false; btn.textContent="⚡ SEARCH";
+}
+
+/* ═══════════════════════════════
+   RENDER — ALL filtered leads, no pagination
+═══════════════════════════════ */
+function renderLeads() {
+  const filtered = getFiltered();
+  const isFiltered = filterWeb!==null || filterMob!==null;
+  document.getElementById("filterCount").textContent =
+    isFiltered ? `${filtered.length} of ${leads.length} leads` : `${leads.length} leads`;
+
+  if (filtered.length === 0) {
+    document.getElementById("leadsContainer").innerHTML =
+      `<div class="empty"><div class="empty-icon">🔍</div>
+       <div class="empty-text">இந்த filter-க்கு lead இல்ல</div>
+       <div class="empty-sub">Try another filter combination</div></div>`;
+    document.getElementById("statsBar").style.display = "flex";
+    document.getElementById("toolbar").style.display  = "flex";
+    updateStats(); return;
+  }
+
+  /* Render ALL filtered leads — no pagination, no back button */
+  document.getElementById("leadsContainer").innerHTML = filtered.map(lead => `
+    <div class="lead-card" id="card-${lead.id}"
+         style="border-color:${lead.scoreColor ? lead.scoreColor+'44' : 'var(--border)'}">
+      <div class="avatar" style="background:${hslBg(lead.id)};color:${hslFg(lead.id)}">
+        ${lead.name.slice(0,2).toUpperCase()}
+      </div>
+      <div class="lead-info">
+        <div class="lead-name">${lead.name}</div>
+        <div class="lead-detail">📍 ${lead.address}</div>
+        <div class="lead-detail" style="color:${hasMobile(lead)?'var(--text3)':'#ff9900'}">
+          📞 ${lead.phone}
+        </div>
+        ${lead.category ? `<div class="lead-detail" style="color:var(--text4)">🏷️ ${lead.category}</div>` : ''}
+        ${lead.website
+          ? `<a class="lead-website" href="${lead.website}" target="_blank" rel="noopener">
+               🌐 ${lead.website.replace(/^https?:\/\//,'').slice(0,35)}
+             </a>`
+          : ''}
+      </div>
+      <div class="lead-tags">
+        ${lead.rating ? `<span class="tag tag-rating">⭐ ${lead.rating} (${lead.reviews})</span>` : ''}
+        ${!lead.website  ? `<span class="tag tag-no-web">No Website</span>` : ''}
+        ${!hasMobile(lead) ? `<span class="tag tag-no-mob">No Mobile</span>` : ''}
+      </div>
+      <div class="lead-score" id="score-${lead.id}">
+        ${renderScore(lead)}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById("statsBar").style.display = "flex";
+  document.getElementById("toolbar").style.display  = "flex";
+  updateStats();
+}
+
+/* ── SCORE SECTION ── */
+function renderScore(lead) {
+  if (lead.scoring) return `<span style="font-size:10px;color:#00e5a0">⟳ Scoring...</span>`;
+  if (lead.scoreLabel) {
+    const e = lead.scoreLabel==="Hot"?"🔥":lead.scoreLabel==="Warm"?"🌤":"❄️";
+    return `<span class="score-badge" style="background:${lead.scoreColor}22;color:${lead.scoreColor};border:1px solid ${lead.scoreColor}55">${e} ${lead.scoreLabel}</span>
+            ${lead.reason?`<div class="score-reason">${lead.reason}</div>`:''}`;
+  }
+  return `<button class="btn-ai" onclick="scoreOne(${lead.id})">⚡ AI Score</button>`;
+}
+
+async function scoreOne(id) {
+  const lead = leads.find(l=>l.id===id); if(!lead) return;
+  lead.scoring=true;
+  const el=document.getElementById(`score-${id}`); if(el) el.innerHTML=renderScore(lead);
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:100,
+        messages:[{role:"user",content:
+          `Score as B2B lead: Hot/Warm/Cold.\nName: ${lead.name}\nLocation: ${lead.address}\nCategory: ${lead.category}\nRating: ${lead.rating||"N/A"} (${lead.reviews} reviews)\nHas Website: ${lead.website?"Yes":"No"}\nReply ONLY JSON: {"score":"Hot","reason":"one sentence"}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content||[]).map(c=>c.text||"").join("");
+    const p    = JSON.parse(text.replace(/```json|```/g,"").trim());
+    lead.scoring=false; lead.scoreLabel=p.score;
+    lead.scoreColor=scoreColors[p.score]||"#888"; lead.reason=p.reason;
+  } catch {
+    lead.scoring=false; lead.scoreLabel="Error"; lead.scoreColor="#888";
+  }
+
+  const el2=document.getElementById(`score-${id}`); if(el2) el2.innerHTML=renderScore(lead);
+  const card=document.getElementById(`card-${id}`);
+  if(card) card.style.borderColor=(lead.scoreColor||"var(--border)")+"44";
+  updateStats();
+}
+
+async function scoreAll() {
+  const unscored = getFiltered().filter(l=>!l.scoreLabel&&!l.scoring);
+  for (const lead of unscored) await scoreOne(lead.id);
+}
+
+/* ── STATS ── */
+function updateStats() {
+  document.getElementById("statTotal").textContent = leads.length;
+  document.getElementById("statHot").textContent   = leads.filter(l=>l.scoreLabel==="Hot").length;
+  document.getElementById("statWarm").textContent  = leads.filter(l=>l.scoreLabel==="Warm").length;
+  document.getElementById("statCold").textContent  = leads.filter(l=>l.scoreLabel==="Cold").length;
+  document.getElementById("statWeb").textContent   = leads.filter(l=>hasWebsite(l)).length;
+  document.getElementById("statMob").textContent   = leads.filter(l=>hasMobile(l)).length;
+  document.getElementById("unscoredCount").textContent =
+    leads.filter(l=>!l.scoreLabel).length + " unscored";
+}
+
+/* ── PDF EXPORT ── */
+async function exportPDF() {
+  const btn=document.getElementById("pdfBtn");
+  btn.disabled=true; btn.textContent="⟳ Generating...";
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const filtered = getFiltered();
+    const city = document.getElementById("cityInput").value.trim();
+    const type = document.getElementById("customInput").value.trim()
+               || document.getElementById("typeSelect").value;
+    const now  = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const W=210, M=14; let y=20;
+
+    doc.setFillColor(15,17,23);
+    doc.rect(0,0,W,30,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(0,229,160);
+    doc.text('LEADSTREAM PRO',M,12);
+    doc.setFontSize(8); doc.setTextColor(100,120,140);
+    doc.text(`${type.toUpperCase()} in ${city.toUpperCase()}  •  ${now}`,M,19);
+    doc.setFontSize(7); doc.setTextColor(70,90,110);
+    doc.text(`Total: ${leads.length}  |  Shown: ${filtered.length}  |  Website: ${leads.filter(l=>hasWebsite(l)).length}  |  Mobile: ${leads.filter(l=>hasMobile(l)).length}`,M,26);
+    y=38;
+
+    const cX = { no:M, name:M+8, phone:M+62, web:M+96, rating:M+148, score:M+168 };
+
+    function tableHead() {
+      doc.setFillColor(13,16,24);
+      doc.rect(M-2,y-4,W-M*2+4,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(68,136,180);
+      ['#','NAME','PHONE','WEBSITE','RATING','SCORE'].forEach((h,i)=>{
+        doc.text(h,[cX.no,cX.name,cX.phone,cX.web,cX.rating,cX.score][i],y);
+      });
+      y+=3; doc.setDrawColor(30,36,51); doc.line(M-2,y,W-M+2,y); y+=4;
+    }
+    tableHead();
+
+    filtered.forEach((lead,idx)=>{
+      if(y>272){ doc.addPage(); y=18; tableHead(); }
+      if(idx%2===0){ doc.setFillColor(12,14,20); doc.rect(M-2,y-3.5,W-M*2+4,8,'F'); }
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal'); doc.setTextColor(80,100,120);
+      doc.text(String(idx+1),cX.no,y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(210,215,230);
+      doc.text((lead.name.length>30?lead.name.slice(0,29)+'…':lead.name),cX.name,y);
+      doc.setFont('helvetica','normal');
+      if(hasMobile(lead)){ doc.setTextColor(80,180,130); doc.text(lead.phone.slice(0,16),cX.phone,y); }
+      else { doc.setTextColor(180,80,80); doc.text('No Mobile',cX.phone,y); }
+      if(hasWebsite(lead)){ doc.setTextColor(0,150,200); doc.text(lead.website.replace(/^https?:\/\//,'').slice(0,24),cX.web,y); }
+      else { doc.setTextColor(180,80,80); doc.text('No Website',cX.web,y); }
+      doc.setTextColor(130,200,130);
+      doc.text(lead.rating?`${lead.rating}⭐`:'-',cX.rating,y);
+      const sc=lead.scoreLabel;
+      doc.setFont('helvetica','bold');
+      if(sc==='Hot') doc.setTextColor(255,68,68);
+      else if(sc==='Warm') doc.setTextColor(255,153,0);
+      else if(sc==='Cold') doc.setTextColor(68,136,255);
+      else doc.setTextColor(80,100,120);
+      doc.text(sc?(sc==='Hot'?'🔥 Hot':sc==='Warm'?'🌤 Warm':'❄ Cold'):'-',cX.score,y);
+      y+=5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(60,80,100);
+      doc.text(lead.address.slice(0,85),cX.name,y);
+      y+=2; doc.setDrawColor(20,26,40); doc.line(M-2,y,W-M+2,y); y+=4;
+    });
+
+    const pg=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pg;i++){
+      doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(50,70,90);
+      doc.text(`LeadStream Pro  •  ${now}  •  Page ${i} of ${pg}`,M,292);
+    }
+    doc.save(`leads_${type}_${city}_${Date.now()}.pdf`);
+  } catch(e) { alert("PDF error: "+e.message); }
+  btn.disabled=false; btn.textContent="📄 EXPORT PDF";
+}
+
+function showError(msg) {
+  const el=document.getElementById("errorMsg");
+  el.textContent="⚠️ "+msg; el.style.display="block";
+}
+
+document.getElementById("cityInput").addEventListener("keydown", e=>{
+  if(e.key==="Enter") searchBusinesses();
+});
+
+/* ═══════════════════════════════════════════════════════
+   SYNC CUSTOM FIELD & DROPDOWN
+   - When user types in CUSTOM field, dropdown is disabled
+   - When CUSTOM field is cleared, dropdown is re-enabled
+═══════════════════════════════════════════════════════ */
+const customInput = document.getElementById("customInput");
+const typeSelect = document.getElementById("typeSelect");
+
+function updateDropdownState() {
+  const hasCustom = customInput.value.trim().length > 0;
+  typeSelect.disabled = hasCustom;
+  
+  // Visual feedback
+  if (hasCustom) {
+    typeSelect.style.opacity = "0.4";
+    typeSelect.style.pointerEvents = "none";
+    customInput.style.borderColor = "#00e5a0";
+  } else {
+    typeSelect.style.opacity = "1";
+    typeSelect.style.pointerEvents = "auto";
+    customInput.style.borderColor = "";
+  }
+}
+
+customInput.addEventListener("input", updateDropdownState);
+typeSelect.addEventListener("change", () => {
+  // If dropdown is changed and custom is empty, clear any previous custom intent
+  if (!customInput.value.trim()) {
+    updateDropdownState();
+  }
+});
+
+// Initialize on page load
+updateDropdownState();
+</script>
+</body>
+</html>
